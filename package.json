@@ -1,0 +1,12 @@
+{
+  "name": "ai-image-forensics",
+  "version": "0.2.0-dev",
+  "description": "Client-side AI image provenance detector and watermark tooling",
+  "type": "module",
+  "private": true,
+  "repository": "https://github.com/ZKunZhang/ai-image-forensics",
+  "scripts": {
+    "test": "node --test"
+  },
+  "license": "MIT"
+}

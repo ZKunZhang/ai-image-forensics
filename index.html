@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#0a0a0b" media="(prefers-color-scheme: dark)">
+
+    <!-- SEO -->
+    <title>AI 图片检测 · C2PA / SynthID / Sora / Gemini / Midjourney 溯源 · AI Image Forensics</title>
+    <meta name="description" content="免费 AI 图片检测工具。100% 在浏览器里运行,图片不上传。识别 C2PA / Content Credentials 来源凭证、Google SynthID 水印、OpenAI DALL·E / Sora / gpt-image / Nano Banana、Midjourney、Stable Diffusion / SDXL / Flux、Adobe Firefly 等 AI 生成签名。提取 EXIF / XMP / IPTC / ICC 元数据,65 项频域特征启发式分析,支持去除元数据、扰动水印、注入相机 EXIF 伪装为真实照片。AI image detector, AI-generated image detection, free online tool, no upload.">
+    <meta name="keywords" content="AI 图片检测,AI 生成图检测,AI 图片识别,AI 图识别,判断图片是否 AI 生成,ai图片溯源,C2PA 检测,Content Credentials,SynthID 检测,SynthID detector,Sora 检测,Sora 水印,DALL-E 检测,dalle 检测,gpt-image,Nano Banana,Midjourney 检测,Stable Diffusion 检测,SDXL 检测,Flux 检测,ComfyUI 检测,Adobe Firefly 检测,Gemini 生成图,Imagen 检测,EXIF 分析,EXIF 查看,EXIF 在线,XMP 元数据,IPTC,ICC,JUMBF,频域分析,FFT 图像分析,DCT 分析,小波分析,图像水印检测,图像水印去除,不可见水印,隐形水印,隐写术检测,图片溯源,图像取证,image forensics,AI image detector,AI-generated image detection,AI image watermark,synthetic image detection,diffusion model detection,watermark removal,metadata stripper,EXIF viewer online,C2PA verifier,OpenAI 检测工具,OpenAI detect,ChatGPT 图片检测,客户端工具,浏览器工具,零后端,图片不上传,免费在线工具,在线检测">
+    <meta name="author" content="zhaokun">
+    <link rel="canonical" href="https://zkunzhang.github.io/ai-image-forensics/">
+    <meta name="robots" content="index, follow, max-image-preview:large">
+
+    <!-- Preconnect for CDN-loaded ES Modules. -->
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+
+    <!-- Multilingual hints: same content, two query-param URLs -->
+    <link rel="alternate" hreflang="zh-CN" href="https://zkunzhang.github.io/ai-image-forensics/">
+    <link rel="alternate" hreflang="en"    href="https://zkunzhang.github.io/ai-image-forensics/?lang=en">
+    <link rel="alternate" hreflang="x-default" href="https://zkunzhang.github.io/ai-image-forensics/">
+
+    <!-- Bing crawl hint: we support IndexNow but without a key file yet (add one from bingwebmaster) -->
+    <meta name="bingbot" content="index,follow">
+    <meta name="googlebot" content="index,follow,max-snippet:-1,max-image-preview:large,max-video-preview:-1">
+
+    <!-- Open Graph (微信、Facebook、Telegram 分享卡片) -->
+    <meta property="og:type" content="website">
+    <meta property="og:locale" content="zh_CN">
+    <meta property="og:locale:alternate" content="en_US">
+    <meta property="og:site_name" content="AI Image Forensics · AI 图片鉴伪">
+    <meta property="og:title" content="AI 图片检测 · C2PA / SynthID / Sora / Midjourney / DALL-E 溯源 · 浏览器运行不上传">
+    <meta property="og:description" content="免费 AI 图片检测工具。识别 C2PA、Google SynthID、OpenAI DALL-E / Sora / gpt-image、Midjourney、Stable Diffusion、Flux、Adobe Firefly、Gemini 等 AI 生成签名;读取 EXIF / XMP 元数据;65 项频域特征分析。100% 客户端,图片不上传。">
+    <meta property="og:url" content="https://zkunzhang.github.io/ai-image-forensics/">
+    <meta property="og:image" content="https://zkunzhang.github.io/ai-image-forensics/docs/screenshots/main-light.svg">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="720">
+    <meta property="og:image:alt" content="AI Image Forensics 检测主界面截图">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="AI 图片检测 · SynthID / Sora / Midjourney / Stable Diffusion">
+    <meta name="twitter:description" content="浏览器内运行的免费 AI 图片溯源 · C2PA / EXIF / 65 频域特征 · 零后端图片不上传">
+    <meta name="twitter:image" content="https://zkunzhang.github.io/ai-image-forensics/docs/screenshots/main-light.svg">
+    <meta name="twitter:image:alt" content="AI Image Forensics 检测主界面截图">
+
+    <!-- JSON-LD: multiple schemas for rich search result cards -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": "AI Image Forensics",
+      "alternateName": ["AI 图片溯源检测", "AI 图片检测工具", "AI Image Detector"],
+      "description": "浏览器内运行的免费 AI 图片溯源工具:检测 C2PA / Google SynthID / OpenAI DALL-E / Sora / Midjourney / Stable Diffusion / Flux / Adobe Firefly / Gemini 等 AI 生成签名,读取 EXIF 元数据,65 项频域特征启发式分析,支持元数据清洗与相机 EXIF 伪装。",
+      "url": "https://zkunzhang.github.io/ai-image-forensics/",
+      "applicationCategory": ["MultimediaApplication", "SecurityApplication", "UtilitiesApplication"],
+      "operatingSystem": "Any (Web Browser)",
+      "browserRequirements": "Requires JavaScript, ES Modules, Web Workers",
+      "offers": {"@type": "Offer", "price": "0", "priceCurrency": "USD"},
+      "license": "https://opensource.org/licenses/MIT",
+      "inLanguage": ["zh-CN", "en"],
+      "featureList": [
+        "C2PA / Content Credentials detection",
+        "Google SynthID watermark detection",
+        "OpenAI DALL-E / Sora / gpt-image / Nano Banana detection",
+        "Midjourney signature detection",
+        "Stable Diffusion / SDXL / Flux / ComfyUI detection",
+        "Adobe Firefly detection",
+        "EXIF / XMP / IPTC / ICC metadata parsing",
+        "65-feature frequency-domain analysis (FFT / DCT / DWT)",
+        "Pixel-level watermark disruption",
+        "Camera EXIF injection (17 models)",
+        "Runs 100% client-side, no upload"
+      ],
+      "creator": {"@type": "Person", "name": "zhaokun", "url": "https://github.com/ZKunZhang"}
+    }
+    </script>
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "这个工具会上传我的图片吗?",
+          "acceptedAnswer": {"@type": "Answer", "text": "不会。所有分析都在浏览器里完成,图片从不离开你的设备。零后端、零服务器。"}
+        },
+        {
+          "@type": "Question",
+          "name": "能检测 OpenAI Sora / DALL-E / gpt-image / Nano Banana 生成的图片吗?",
+          "acceptedAnswer": {"@type": "Answer", "text": "能检测这些模型在元数据中留下的厂商签名(OpenAI、DALL-E、gpt-image 等字符串)和 C2PA 声明。如果生成工具没有嵌入任何标记,则会通过频域特征做启发式参考。"}
+        },
+        {
+          "@type": "Question",
+          "name": "能检测 Google SynthID 水印吗?",
+          "acceptedAnswer": {"@type": "Answer", "text": "可做频域启发式参考,但 SynthID 目前没有官方公开的 detector,仅靠相位一致性等特征判断,准确率有限。工具还提供水印扰动功能用于学术鲁棒性评估。"}
+        },
+        {
+          "@type": "Question",
+          "name": "支持检测哪些 AI 图像生成工具?",
+          "acceptedAnswer": {"@type": "Answer", "text": "OpenAI DALL-E / Sora / gpt-image、Google Gemini / Imagen / SynthID / Nano Banana、Midjourney、Stable Diffusion / SDXL / Flux / ComfyUI / Automatic1111 / InvokeAI、Adobe Firefly。支持识别 C2PA Content Credentials 来源凭证。"}
+        },
+        {
+          "@type": "Question",
+          "name": "是免费的吗?",
+          "acceptedAnswer": {"@type": "Answer", "text": "完全免费,MIT 开源。源码在 GitHub 上,也可以自己部署。"}
+        }
+      ]
+    }
+    </script>
+
+    <script>
+        // Theme boot — runs inline before paint to avoid flash.
+        (() => {
+            const saved = localStorage.getItem('theme');
+            const mql = window.matchMedia('(prefers-color-scheme: dark)');
+            const resolve = () => saved === 'dark' || saved === 'light' ? saved : (mql.matches ? 'dark' : 'light');
+            document.documentElement.dataset.theme = resolve();
+            mql.addEventListener('change', () => {
+                if (!localStorage.getItem('theme')) document.documentElement.dataset.theme = mql.matches ? 'dark' : 'light';
+            });
+        })();
+    </script>
+    <link rel="stylesheet" href="src/styles.css">
+</head>
+<body>
+    <div class="shell">
+        <header class="topbar">
+            <div class="brand">
+                <svg class="brand-mark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <circle cx="11" cy="11" r="7"></circle>
+                    <line x1="21" y1="21" x2="16.5" y2="16.5"></line>
+                    <circle cx="11" cy="11" r="2.5"></circle>
+                </svg>
+                <span class="brand-name">AI Image Forensics</span>
+            </div>
+            <div class="topbar-actions">
+                <button class="lang-toggle" id="langToggle" type="button" aria-label="Switch language">
+                    <span class="lang-opt" data-lang="zh">中</span>
+                    <span class="lang-sep">/</span>
+                    <span class="lang-opt" data-lang="en">EN</span>
+                </button>
+                <a class="icon-link" href="https://github.com/ZKunZhang/ai-image-forensics" target="_blank" rel="noopener" aria-label="GitHub">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M12 .5C5.73.5.67 5.57.67 11.84c0 5.02 3.25 9.28 7.77 10.79.57.1.78-.25.78-.55v-1.93c-3.16.69-3.82-1.52-3.82-1.52-.52-1.31-1.26-1.66-1.26-1.66-1.03-.7.08-.69.08-.69 1.14.08 1.74 1.18 1.74 1.18 1.01 1.74 2.65 1.24 3.3.94.1-.73.4-1.24.72-1.52-2.52-.29-5.17-1.26-5.17-5.62 0-1.24.44-2.25 1.17-3.05-.12-.29-.51-1.44.11-3 0 0 .96-.3 3.13 1.16a10.9 10.9 0 0 1 5.71 0c2.17-1.47 3.13-1.16 3.13-1.16.62 1.56.23 2.71.11 3 .73.8 1.17 1.81 1.17 3.05 0 4.37-2.66 5.33-5.19 5.61.41.35.77 1.05.77 2.11v3.13c0 .3.21.66.79.55 4.51-1.51 7.76-5.77 7.76-10.79C23.33 5.57 18.27.5 12 .5Z"/></svg>
+                </a>
+                <button class="theme-toggle" id="themeToggle" type="button" aria-label="切换主题">
+                    <svg class="theme-icon icon-sun" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+                    <svg class="theme-icon icon-moon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79Z"/></svg>
+                </button>
+            </div>
+        </header>
+
+        <main class="workspace" id="workspace">
+            <aside class="pane pane-left">
+                <section class="upload-area" id="uploadArea">
+                    <div class="upload-inner">
+                        <svg class="upload-mark" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="6" y="10" width="36" height="28" rx="2"/>
+                            <circle cx="17" cy="20" r="3"/>
+                            <path d="M6 34l10-10 8 8 6-6 12 12"/>
+                        </svg>
+                        <div class="upload-text" data-i18n="upload.text.html" data-i18n-html>拖拽一张或多张图片到此处<br>或 <strong>点击选择</strong></div>
+                        <div class="upload-hint" data-i18n="upload.hint">PNG · JPEG · WebP</div>
+                    </div>
+                    <input type="file" id="fileInput" accept="image/png,image/jpeg,image/webp" multiple>
+                </section>
+
+                <section class="preview-block hidden" id="previewBlock">
+                    <div class="preview-frame">
+                        <img id="previewImg" src="" alt="预览">
+                        <button class="preview-change" id="btnChangeFile" type="button" aria-label="换一张">
+                            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3.54-7.13"/><polyline points="21 4 21 12 13 12"/></svg>
+                            <span data-i18n="upload.changeFile">换一张</span>
+                        </button>
+                    </div>
+                    <div class="file-meta-card">
+                        <div class="fm-row fm-name" id="fileName"></div>
+                        <div class="fm-grid">
+                            <div class="fm-cell"><span class="fm-label" data-i18n="fm.type">类型</span><span class="fm-value" id="fileType">—</span></div>
+                            <div class="fm-cell"><span class="fm-label" data-i18n="fm.size">大小</span><span class="fm-value" id="fileSize">—</span></div>
+                            <div class="fm-cell"><span class="fm-label" data-i18n="fm.dims">尺寸</span><span class="fm-value" id="fileDims">—</span></div>
+                        </div>
+                        <div class="fm-hash">
+                            <span class="fm-label" data-i18n="fm.hash">SHA-256</span>
+                            <span class="fm-value mono" id="fileHash">—</span>
+                        </div>
+                    </div>
+                    <div class="batch-queue hidden" id="batchQueue" aria-label="图片队列"></div>
+                </section>
+            </aside>
+
+            <section class="pane pane-right" id="paneRight">
+                <div class="empty-state" id="emptyState">
+                    <h1 class="hero-title" data-i18n="hero.title">追溯一张图的来路</h1>
+                    <p class="hero-sub" data-i18n="hero.sub">检测 C2PA 凭证、AI 生成签名、频域水印痕迹。</p>
+                    <div class="empty-checks">
+                        <div class="empty-check"><span class="ec-dot"></span><span data-i18n="hero.feature.c2pa">C2PA / Content Credentials</span></div>
+                        <div class="empty-check"><span class="ec-dot"></span><span data-i18n="hero.feature.vendors">OpenAI · Google SynthID · Midjourney · SD</span></div>
+                        <div class="empty-check"><span class="ec-dot"></span><span data-i18n="hero.feature.freq">65 项频域特征 + 启发式打分</span></div>
+                        <div class="empty-check"><span class="ec-dot"></span><span data-i18n="hero.feature.clean">元数据清洗 / 相机 EXIF 伪装</span></div>
+                    </div>
+                </div>
+
+                <div class="result-view hidden" id="resultView">
+                    <div class="result-head">
+                        <div class="result-head-text">
+                            <span class="eyebrow" id="summaryEyebrow" data-i18n="result.eyebrow">分析结果</span>
+                            <h2 class="summary-title" id="headerTitle"></h2>
+                            <p class="summary-sub" id="headerSubtitle"></p>
+                        </div>
+                        <span class="pill" id="headerBadge"></span>
+                    </div>
+
+                    <div class="tab-bar">
+                        <button class="tab-btn active" data-tab="detect" data-i18n="tab.detect">溯源</button>
+                        <button class="tab-btn" data-tab="freq" data-i18n="tab.freq">频域</button>
+                        <button class="tab-btn" data-tab="meta" data-i18n="tab.meta">元数据</button>
+                        <button class="tab-btn" data-tab="convert" data-i18n="tab.convert">转换</button>
+                    </div>
+
+                    <div class="tab-panel" data-panel="detect">
+                        <div class="analysis-log hidden" id="analysisLog"></div>
+                        <div id="detectionItems"></div>
+                    </div>
+                    <div class="tab-panel hidden" data-panel="freq">
+                        <div id="freqPanel">
+                            <div class="freq-disclaimer">
+                                <span class="freq-disclaimer-tag" data-i18n="freq.disclaimer.tag">非专业分析</span>
+                                <span data-i18n="freq.disclaimer.text">仅供参考 · 基于启发式规则,不等同于学术级分类器</span>
+                            </div>
+                            <button class="btn-primary" id="btnRunFreq">
+                                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                                <span data-i18n="freq.runBtn">运行频域分析</span>
+                            </button>
+                            <p class="panel-hint" data-i18n="freq.panelHint.html" data-i18n-html>
+                                提取 65 个频域特征
+                            </p>
+                        </div>
+                    </div>
+                    <div class="tab-panel hidden" data-panel="meta">
+                        <div id="metadataPanel"></div>
+                    </div>
+                    <div class="tab-panel hidden" data-panel="convert">
+                        <div class="convert-head">
+                            <p class="card-sub" data-i18n="conv.sub">剥离 C2PA / AI 标记,重编码并注入相机 EXIF,让图片伪装成真实相机拍摄。</p>
+                        </div>
+                        <div id="cameraSelector"></div>
+                        <div class="disrupt-row">
+                            <label class="toggle-row">
+                                <input type="checkbox" id="chkDisruptWatermark">
+                                <span class="toggle-slider"></span>
+                                <span class="toggle-text" data-i18n="conv.wm.toggle">扰动像素级隐形水印</span>
+                            </label>
+                            <p class="panel-hint panel-hint-inline" data-i18n="conv.wm.hint">多种技术组合降低 SynthID / Stable Signature / dwtDct 等水印可检测性。</p>
+                            <div class="wm-controls" id="wmControls" aria-hidden="true">
+                                <div class="wm-control-row">
+                                    <span class="wm-ctrl-label" data-i18n="conv.preset">预设</span>
+                                    <div class="preset-bar" role="tablist">
+                                        <button type="button" class="preset-btn" data-preset="light" data-i18n="conv.preset.light">轻量</button>
+                                        <button type="button" class="preset-btn active" data-preset="rec" data-i18n="conv.preset.rec">推荐</button>
+                                        <button type="button" class="preset-btn" data-preset="strong" data-i18n="conv.preset.strong">强力</button>
+                                        <button type="button" class="preset-btn" data-preset="ultra"><span data-i18n="conv.preset.ultra">极限</span> <span class="preset-warn" title="可能出现细微视觉损伤">·</span></button>
+                                        <button type="button" class="preset-btn" data-preset="custom" data-i18n="conv.preset.custom">自定义</button>
+                                    </div>
+                                </div>
+                                <div class="wm-control-row">
+                                    <span class="wm-ctrl-label" data-i18n="conv.intensity">强度</span>
+                                    <input type="range" id="wmIntensity" min="1" max="5" step="1" value="3">
+                                    <span class="slider-val" id="wmIntensityVal">3</span>
+                                </div>
+
+                                <div class="tech-grid" id="techGrid">
+                                    <label class="tech-cell" data-tech="geom">
+                                        <input type="checkbox" data-tech="geom">
+                                        <span class="tech-name" data-i18n="conv.tech.geom">几何微变换</span>
+                                        <span class="tech-desc" data-i18n="conv.tech.geom.desc">裁边 0.3-1.5% 后 resize,破坏几何对齐水印</span>
+                                    </label>
+                                    <label class="tech-cell" data-tech="noise">
+                                        <input type="checkbox" data-tech="noise">
+                                        <span class="tech-name" data-i18n="conv.tech.noise">高斯噪声</span>
+                                        <span class="tech-desc" data-i18n="conv.tech.noise.desc">±2 至 ±6 灰度值,提升噪声地板</span>
+                                    </label>
+                                    <label class="tech-cell" data-tech="unsharp">
+                                        <input type="checkbox" data-tech="unsharp">
+                                        <span class="tech-name" data-i18n="conv.tech.unsharp">锐化补偿</span>
+                                        <span class="tech-desc" data-i18n="conv.tech.unsharp.desc">恢复噪声/重采样造成的视觉柔化</span>
+                                    </label>
+                                    <label class="tech-cell" data-tech="doubleJpeg">
+                                        <input type="checkbox" data-tech="doubleJpeg">
+                                        <span class="tech-name" data-i18n="conv.tech.doubleJpeg">双次 JPEG</span>
+                                        <span class="tech-desc" data-i18n="conv.tech.doubleJpeg.desc">q=60-72 中间编码,破坏 DCT 域水印</span>
+                                    </label>
+                                    <label class="tech-cell" data-tech="chShift">
+                                        <input type="checkbox" data-tech="chShift">
+                                        <span class="tech-name" data-i18n="conv.tech.chShift">通道位移</span>
+                                        <span class="tech-desc" data-i18n="conv.tech.chShift.desc">R/B 通道 ±1 像素,破坏跨通道对齐水印</span>
+                                    </label>
+                                    <label class="tech-cell" data-tech="bandNoise">
+                                        <input type="checkbox" data-tech="bandNoise">
+                                        <span class="tech-name" data-i18n="conv.tech.bandNoise">低频带状噪声</span>
+                                        <span class="tech-desc" data-i18n="conv.tech.bandNoise.desc">粗网格平滑噪声,扰动频域中低频</span>
+                                    </label>
+                                    <label class="tech-cell" data-tech="fftPhase">
+                                        <input type="checkbox" data-tech="fftPhase">
+                                        <span class="tech-name"><span data-i18n="conv.tech.fftPhase">FFT 相位扰动</span> <span class="tech-badge" data-i18n="conv.tech.badge.slow">慢</span></span>
+                                        <span class="tech-desc" data-i18n="conv.tech.fftPhase.desc">真 2D-FFT 中频相位 ±3-5°,直击 SynthID,~500ms</span>
+                                    </label>
+                                    <label class="tech-cell" data-tech="median">
+                                        <input type="checkbox" data-tech="median">
+                                        <span class="tech-name"><span data-i18n="conv.tech.median">中值滤波 3×3</span> <span class="tech-badge" data-i18n="conv.tech.badge.soft">轻柔化</span></span>
+                                        <span class="tech-desc" data-i18n="conv.tech.median.desc">破坏 LSB 隐写与单像素噪声水印</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <details class="advanced-panel" id="advancedPanel">
+                            <summary><span class="advanced-chev">▸</span> <span data-i18n="conv.adv.summary">高级选项</span> <span class="advanced-note" data-i18n="conv.adv.note"></span></summary>
+                            <div class="advanced-body">
+                                <div class="adv-field">
+                                    <label class="adv-label" data-i18n="conv.adv.date">拍摄时间</label>
+                                    <div class="adv-control">
+                                        <select id="advDatePreset">
+                                            <option value="now" data-i18n="conv.adv.date.now">现在 (推荐)</option>
+                                            <option value="-1h" data-i18n="conv.adv.date.1h">1 小时前</option>
+                                            <option value="-1d" data-i18n="conv.adv.date.1d">1 天前</option>
+                                            <option value="-7d" data-i18n="conv.adv.date.7d">1 周前</option>
+                                            <option value="-30d" data-i18n="conv.adv.date.30d">1 个月前</option>
+                                            <option value="-365d" data-i18n="conv.adv.date.365d">1 年前</option>
+                                            <option value="custom" data-i18n="conv.adv.date.custom">自定义…</option>
+                                        </select>
+                                        <input type="datetime-local" id="advDateCustom" class="hidden">
+                                    </div>
+                                </div>
+                                <div class="adv-field">
+                                    <label class="adv-label" data-i18n="conv.adv.gps">地理位置</label>
+                                    <select id="advGps"></select>
+                                </div>
+                                <div class="adv-field">
+                                    <label class="adv-label" data-i18n="conv.adv.orient">方向</label>
+                                    <select id="advOrientation">
+                                        <option value="1" data-i18n="conv.adv.orient.1">1 · 正常</option>
+                                        <option value="6" data-i18n="conv.adv.orient.6">6 · 顺时针 90°</option>
+                                        <option value="8" data-i18n="conv.adv.orient.8">8 · 逆时针 90°</option>
+                                        <option value="3" data-i18n="conv.adv.orient.3">3 · 180°</option>
+                                    </select>
+                                </div>
+                                <div class="adv-field">
+                                    <label class="adv-label" data-i18n="conv.adv.quality">JPEG 质量</label>
+                                    <div class="adv-control">
+                                        <select id="advQualityMode">
+                                            <option value="random" data-i18n="conv.adv.quality.rand">随机 88-95 (推荐)</option>
+                                            <option value="custom" data-i18n="conv.adv.quality.custom">自定义…</option>
+                                        </select>
+                                        <input type="range" id="advQuality" class="hidden" min="60" max="100" step="1" value="92">
+                                        <span class="slider-val hidden" id="advQualityVal">92</span>
+                                    </div>
+                                </div>
+                                <div class="adv-field">
+                                    <label class="adv-label" data-i18n="conv.adv.iso">ISO</label>
+                                    <input type="number" id="advIso" data-i18n-attr="placeholder:conv.adv.iso.ph" placeholder="按相机默认" min="25" max="102400">
+                                </div>
+                                <div class="adv-field">
+                                    <label class="adv-label" data-i18n="conv.adv.fnum">光圈 f/</label>
+                                    <input type="number" id="advFNumber" data-i18n-attr="placeholder:conv.adv.iso.ph" placeholder="按相机默认" min="0.9" max="32" step="0.1">
+                                </div>
+                                <div class="adv-field">
+                                    <label class="adv-label" data-i18n="conv.adv.shutter">快门 1/…</label>
+                                    <input type="number" id="advShutterDen" data-i18n-attr="placeholder:conv.adv.iso.ph" placeholder="按相机默认" min="1" max="8000">
+                                </div>
+                            </div>
+                        </details>
+
+                        <button class="btn-primary btn-full" id="btnConvert">
+                            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3.54-7.13"/><polyline points="21 4 21 12 13 12"/></svg>
+                            <span data-i18n="conv.runBtn">开始转换</span>
+                        </button>
+                        <div class="convert-result" id="convertResult"></div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <footer class="foot">
+            <span data-i18n="foot.mit" data-i18n-html>MIT · 开源于 <a href="https://github.com/ZKunZhang/ai-image-forensics" target="_blank" rel="noopener">GitHub</a></span>
+        </footer>
+    </div>
+
+    <script type="module" src="src/main.js"></script>
+</body>
+</html>
