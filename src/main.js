@@ -479,9 +479,25 @@ document.getElementById('btnConvert').addEventListener('click', async () => {
     const btn = document.getElementById('btnConvert');
     const resultDiv = document.getElementById('convertResult');
     resultDiv.style.display = 'block';
-    resultDiv.className = 'convert-result';
+    resultDiv.className = 'convert-result is-processing';
     const files = fileQueue.length ? fileQueue : [currentFile];
-    resultDiv.innerHTML = `<div class="loading"><div class="spinner"></div>${escHtml(files.length > 1 ? t('conv.batchProcessing', { done: 1, total: files.length }) : t('conv.processing'))}</div>`;
+    const btnLabel = btn.querySelector('span');
+    const idleBtnText = btnLabel?.textContent;
+    if (btnLabel) btnLabel.textContent = t('conv.batchProcessing', { done: 0, total: files.length });
+    resultDiv.innerHTML = `
+        <div class="convert-progress-head">
+            <div class="spinner"></div>
+            <div>
+                <strong id="convertProgressTitle">${escHtml(t('conv.batchProcessing', { done: 0, total: files.length }))}</strong>
+                <span id="convertProgressFile"></span>
+            </div>
+            <b id="convertProgressPercent">0%</b>
+        </div>
+        <div class="convert-progress-track"><span id="convertProgressBar"></span></div>
+        <div class="convert-task-list">
+            ${files.map((file, index) => `<div class="convert-task" data-task-index="${index}"><span class="convert-task-mark">${index + 1}</span><span class="convert-task-name">${escHtml(file.name)}</span><em>${escHtml(t('conv.status.pending'))}</em></div>`).join('')}
+        </div>`;
+    resultDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     btn.disabled = true;
 
     try {
@@ -494,9 +510,14 @@ document.getElementById('btnConvert').addEventListener('click', async () => {
         const failures = [];
         for (let index = 0; index < files.length; index++) {
             const file = files[index];
-            if (files.length > 1) {
-                resultDiv.innerHTML = `<div class="loading"><div class="spinner"></div>${escHtml(t('conv.batchProcessing', { done: index + 1, total: files.length }))}</div>`;
-            }
+            const task = resultDiv.querySelector(`[data-task-index="${index}"]`);
+            task?.classList.add('running');
+            if (task) task.querySelector('em').textContent = t('conv.status.running');
+            const progressTitle = document.getElementById('convertProgressTitle');
+            const progressFile = document.getElementById('convertProgressFile');
+            if (progressTitle) progressTitle.textContent = t('conv.batchProcessing', { done: index + 1, total: files.length });
+            if (progressFile) progressFile.textContent = t('conv.processingFile', { name: file.name });
+            if (btnLabel) btnLabel.textContent = t('conv.batchProcessing', { done: index + 1, total: files.length });
             try {
                 const bytes = file === currentFile && currentBytes
                     ? currentBytes
@@ -515,16 +536,29 @@ document.getElementById('btnConvert').addEventListener('click', async () => {
                     url: URL.createObjectURL(blob),
                     outName: `${origName}_${profile.Make}_${Date.now().toString(36)}_${index + 1}.jpg`,
                 });
+                task?.classList.remove('running');
+                task?.classList.add('done');
+                if (task) task.querySelector('em').textContent = t('conv.status.done');
             } catch (error) {
                 failures.push({ file, error });
+                task?.classList.remove('running');
+                task?.classList.add('failed');
+                if (task) task.querySelector('em').textContent = t('conv.status.failed');
             }
+            const pct = Math.round((index + 1) / files.length * 100);
+            const progressBar = document.getElementById('convertProgressBar');
+            const progressPercent = document.getElementById('convertProgressPercent');
+            if (progressBar) progressBar.style.width = `${pct}%`;
+            if (progressPercent) progressPercent.textContent = `${pct}%`;
         }
 
         if (!outputs.length) throw failures[0]?.error || new Error('No images converted');
+        resultDiv.className = 'convert-result is-complete';
         if (files.length === 1) {
             const output = outputs[0];
             resultDiv.innerHTML = `
-                <div style="color:var(--success);font-weight:600;margin-bottom:10px">${escHtml(t('conv.done'))}</div>
+                <div class="convert-success-title"><span>✓</span>${escHtml(t('conv.done'))}</div>
+                <p class="convert-download-hint">${escHtml(t('conv.downloadHint'))}</p>
                 <img src="${output.url}" alt="转换结果">
                 <div style="font-size:12px;color:var(--text-muted);margin:8px 0;line-height:1.8">
                     ${output.log.map(l => `• ${escHtml(l)}`).join('<br>')}
@@ -538,7 +572,8 @@ document.getElementById('btnConvert').addEventListener('click', async () => {
             };
         } else {
             resultDiv.innerHTML = `
-                <div style="color:var(--success);font-weight:600;margin-bottom:10px">${escHtml(t('conv.batchDone', { n: outputs.length }))}</div>
+                <div class="convert-success-title"><span>✓</span>${escHtml(t('conv.batchDone', { n: outputs.length }))}</div>
+                <p class="convert-download-hint">${escHtml(t('conv.downloadHint'))}</p>
                 ${failures.length ? `<div class="batch-failures">${escHtml(t('conv.batchFailed', { n: failures.length }))}: ${failures.map(({ file }) => escHtml(file.name)).join(' · ')}</div>` : ''}
                 <div class="batch-downloads">
                     ${outputs.map(output => `<a class="download-btn batch-download" href="${output.url}" download="${escAttr(output.outName)}"><span>${escHtml(output.outName)}</span><strong>${escHtml(formatSize(output.blob.size))}</strong></a>`).join('')}
@@ -549,6 +584,7 @@ document.getElementById('btnConvert').addEventListener('click', async () => {
         resultDiv.innerHTML = `<div style="color:var(--danger);font-weight:600">${escHtml(t('conv.err', { msg: err.message }))}</div>`;
     } finally {
         btn.disabled = false;
+        if (btnLabel) btnLabel.textContent = idleBtnText;
     }
 });
 

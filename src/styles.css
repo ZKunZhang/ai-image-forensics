@@ -358,8 +358,18 @@ a:hover { color: var(--text-muted); }
 .slider-label { min-width: 28px; }
 
 .convert-result {
-    margin-top: 4px; padding: 16px; background: var(--success-bg);
+    margin-top: 4px; padding: 18px; background: var(--success-bg);
     border: 1px solid transparent; border-radius: var(--radius-md); display: none;
+    scroll-margin: 20px;
+}
+.convert-result.is-processing {
+    background: var(--surface); border-color: var(--border-strong);
+    box-shadow: var(--shadow-md);
+}
+.convert-result.is-complete {
+    border-color: color-mix(in srgb, var(--success) 32%, transparent);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--success) 8%, transparent);
+    animation: convertComplete .45s var(--ease);
 }
 .convert-result.error { background: var(--danger-bg); }
 .convert-result img { max-width: 100%; border-radius: var(--radius-sm); margin: 10px 0;
@@ -372,6 +382,54 @@ a:hover { color: var(--text-muted); }
     transition: opacity var(--dur-fast) var(--ease);
 }
 .convert-result .download-btn:hover { opacity: .85; }
+.convert-progress-head {
+    display: grid; grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center; gap: 12px;
+}
+.convert-progress-head .spinner { width: 28px; height: 28px; margin: 0; }
+.convert-progress-head strong { display: block; font-size: 14px; color: var(--text); }
+.convert-progress-head span {
+    display: block; margin-top: 3px; color: var(--text-muted); font-size: 11.5px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.convert-progress-head b { font-size: 18px; font-variant-numeric: tabular-nums; }
+.convert-progress-track {
+    height: 7px; margin: 16px 0; overflow: hidden;
+    background: var(--surface-alt); border-radius: 999px;
+}
+.convert-progress-track span {
+    display: block; width: 0; height: 100%; border-radius: inherit;
+    background: var(--text); transition: width .25s var(--ease);
+}
+.convert-task-list { display: flex; flex-direction: column; gap: 5px; max-height: 210px; overflow-y: auto; }
+.convert-task {
+    display: grid; grid-template-columns: 22px minmax(0, 1fr) auto;
+    align-items: center; gap: 8px; padding: 7px 8px;
+    border-radius: var(--radius-sm); color: var(--text-muted); font-size: 11.5px;
+}
+.convert-task-mark {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 20px; height: 20px; border-radius: 50%; background: var(--surface-alt); font-size: 10px;
+}
+.convert-task-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.convert-task em { font-style: normal; font-size: 10.5px; }
+.convert-task.running { background: var(--surface-alt); color: var(--text); }
+.convert-task.running .convert-task-mark { background: var(--text); color: var(--accent-fg); }
+.convert-task.done em { color: var(--success); font-weight: 600; }
+.convert-task.failed em { color: var(--danger); font-weight: 600; }
+.convert-success-title {
+    display: flex; align-items: center; gap: 10px;
+    color: var(--success); font-size: 16px; font-weight: 700;
+}
+.convert-success-title span {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 26px; height: 26px; border-radius: 50%; background: var(--success); color: #fff;
+}
+.convert-download-hint { margin: 7px 0 14px; color: var(--text-muted); font-size: 12px; }
+@keyframes convertComplete {
+    from { transform: translateY(4px); opacity: .7; }
+    to { transform: translateY(0); opacity: 1; }
+}
 
 /* ---------- Loading ---------- */
 .loading { text-align: center; padding: 32px; color: var(--text-muted); font-size: 13px; }
