@@ -121,6 +121,11 @@ function resolveQuality() {
 // ================= Upload handling =================
 const uploadArea = document.getElementById('uploadArea');
 const fileInput = document.getElementById('fileInput');
+let appendSelection = false;
+function openFilePicker(append = false) {
+    appendSelection = append;
+    fileInput.click();
+}
 const uploadFeedback = document.getElementById('uploadFeedback');
 function showUploadFeedback(message = '') {
     uploadFeedback.textContent = message;
@@ -129,12 +134,12 @@ function showUploadFeedback(message = '') {
 uploadArea.addEventListener('keydown', e => {
     if (e.target === uploadArea && (e.key === 'Enter' || e.key === ' ')) {
         e.preventDefault();
-        fileInput.click();
+        openFilePicker();
     }
 });
 uploadArea.addEventListener('click', (e) => {
     if (e.target.closest('input, button, a')) return;
-    fileInput.click();
+    openFilePicker();
 });
 uploadArea.addEventListener('dragover', e => { e.preventDefault(); uploadArea.classList.add('dragover'); });
 uploadArea.addEventListener('dragleave', () => uploadArea.classList.remove('dragover'));
@@ -144,9 +149,12 @@ uploadArea.addEventListener('drop', e => {
     if (e.dataTransfer.files.length) handleFiles(e.dataTransfer.files);
 });
 fileInput.addEventListener('change', () => {
-    if (fileInput.files.length) handleFiles(fileInput.files);
+    if (fileInput.files.length) handleFiles(fileInput.files, { append: appendSelection });
     fileInput.value = '';
+    appendSelection = false;
 });
+fileInput.addEventListener('cancel', () => { appendSelection = false; });
+document.getElementById('btnAddFiles').addEventListener('click', () => openFilePicker(true));
 document.addEventListener('paste', e => {
     if (e.target.closest?.('input, textarea, [contenteditable="true"]')) return;
     if (e.clipboardData?.files.length) {
@@ -166,7 +174,7 @@ document.addEventListener('drop', e => {
 
 document.getElementById('btnChangeFile')?.addEventListener('click', (e) => {
     e.stopPropagation();
-    fileInput.click();
+    openFilePicker();
 });
 
 // ================= Intensity slider =================
@@ -307,19 +315,37 @@ function renderFileQueue() {
     if (convertLabel) convertLabel.textContent = isBatch
         ? t('conv.runBatchBtn', { n: fileQueue.length })
         : t('conv.runBtn');
-    batchQueue.classList.toggle('hidden', !isBatch);
-    if (!isBatch) {
+    batchQueue.classList.toggle('hidden', !fileQueue.length);
+    if (!fileQueue.length) {
         batchQueue.innerHTML = '';
         return;
     }
     batchQueue.innerHTML = `
-        <div class="batch-queue-head">${escHtml(t('upload.batchCount', { n: fileQueue.length }))}</div>
+        <div class="batch-queue-head">${escHtml(t('upload.batchTotal', { n: fileQueue.length, size: formatSize(fileQueue.reduce((total, file) => total + file.size, 0)) }))}</div>
         <div class="batch-queue-items">
-            ${fileQueue.map((file, index) => `<button type="button" class="batch-item ${index === activeFileIndex ? 'active' : ''}" data-file-index="${index}" aria-current="${index === activeFileIndex}" ${converting ? 'disabled' : ''} title="${escAttr(file.name)}"><span>${index + 1}</span><span class="batch-name">${escHtml(file.name)}</span></button>`).join('')}
+            ${fileQueue.map((file, index) => `<div class="batch-row">
+                <button type="button" class="batch-item ${index === activeFileIndex ? 'active' : ''}" data-file-index="${index}" aria-current="${index === activeFileIndex}" ${converting ? 'disabled' : ''} title="${escAttr(file.name)}"><span>${index + 1}</span><span class="batch-name">${escHtml(file.name)}</span></button>
+                <button type="button" class="batch-remove" data-remove-index="${index}" ${converting ? 'disabled' : ''} aria-label="${escAttr(t('upload.remove', { name: file.name }))}" title="${escAttr(t('upload.remove', { name: file.name }))}"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="m6 6 12 12M6 18 18 6"/></svg></button>
+            </div>`).join('')}
         </div>`;
 }
 
 batchQueue.addEventListener('click', (event) => {
+    if (converting) return;
+    const remove = event.target.closest('.batch-remove');
+    if (remove) {
+        const index = Number(remove.dataset.removeIndex);
+        if (!Number.isInteger(index) || !fileQueue[index]) return;
+        const removedActive = index === activeFileIndex;
+        fileQueue.splice(index, 1);
+        if (!fileQueue.length) return btnClear.click();
+        if (index < activeFileIndex) activeFileIndex--;
+        activeFileIndex = Math.min(activeFileIndex, fileQueue.length - 1);
+        renderFileQueue();
+        if (removedActive) handleFile(fileQueue[activeFileIndex]);
+        batchQueue.querySelector(`[data-file-index="${activeFileIndex}"]`)?.focus();
+        return;
+    }
     const item = event.target.closest('.batch-item');
     if (!item) return;
     if (converting) return;
@@ -330,11 +356,16 @@ batchQueue.addEventListener('click', (event) => {
     handleFile(fileQueue[index]);
 });
 
-function handleFiles(files) {
+function handleFiles(files, { append = fileQueue.length > 0 } = {}) {
     if (converting) return showUploadFeedback(t('upload.busy'));
     const accepted = Array.from(files).filter(isSupportedImage);
     if (!accepted.length) return showUploadFeedback(t('upload.invalid'));
     showUploadFeedback(accepted.length < files.length ? t('upload.skipped', { n: files.length - accepted.length }) : '');
+    if (append && fileQueue.length) {
+        fileQueue = [...fileQueue, ...accepted];
+        renderFileQueue();
+        return;
+    }
     fileQueue = accepted;
     activeFileIndex = 0;
     renderFileQueue();
@@ -597,6 +628,7 @@ document.getElementById('btnConvert').addEventListener('click', async () => {
     releaseDownloads();
     langToggle.disabled = true;
     btnClear.disabled = true;
+    document.getElementById('btnAddFiles').disabled = true;
     document.getElementById('btnChangeFile').disabled = true;
     batchQueue.querySelectorAll('button').forEach(b => { b.disabled = true; });
     const btn = document.getElementById('btnConvert');
@@ -693,7 +725,7 @@ document.getElementById('btnConvert').addEventListener('click', async () => {
                     <button class="btn-secondary" id="btnReanalyze">${escHtml(t('conv.reanalyze'))}</button>
                 </div>`;
             document.getElementById('btnReanalyze').onclick = () => {
-                handleFiles([new File([output.blob], output.outName, { type: 'image/jpeg' })]);
+                handleFiles([new File([output.blob], output.outName, { type: 'image/jpeg' })], { append: false });
             };
         } else {
             resultDiv.innerHTML = `
@@ -711,6 +743,7 @@ document.getElementById('btnConvert').addEventListener('click', async () => {
         converting = false;
         langToggle.disabled = false;
         btnClear.disabled = false;
+        document.getElementById('btnAddFiles').disabled = false;
         document.getElementById('btnChangeFile').disabled = false;
         batchQueue.querySelectorAll('button').forEach(b => { b.disabled = false; });
         btn.disabled = false;

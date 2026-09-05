@@ -9,10 +9,13 @@ const STRINGS = {
     'empty.title': { zh: '每张图片，都有线索可循', en: 'Every image has a story' },
     'empty.sub': { zh: '选择图片后自动分析来源标记，再按需探索频域特征、元数据与转换工具。', en: 'Select an image to check its provenance, then explore frequency features, metadata, and conversion tools.' },
     'upload.heading': { zh: '01 / 选择图片', en: '01 / SELECT IMAGES' },
-    'upload.choose': { zh: '选择图片', en: 'Choose images' },
+    'upload.choose': { zh: '选择图片（可多选）', en: 'Choose images (multiple allowed)' },
+    'upload.addFiles': { zh: '继续添加图片', en: 'Add more images' },
+    'upload.remove': { zh: '移除 ${name}', en: 'Remove ${name}' },
+    'upload.batchTotal': { zh: '已选 ${n} 张 · ${size}', en: '${n} selected · ${size}' },
     'upload.clear': { zh: '清空', en: 'Clear' },
     'upload.paste': { zh: '也可直接粘贴剪贴板中的图片', en: 'Or paste an image from your clipboard' },
-    'upload.help': { zh: '支持多图批量处理。原图始终保留在你的设备上。', en: 'Batch processing supported. Your original files stay on your device.' },
+    'upload.help': { zh: '支持多选，也可继续拖入或粘贴图片追加到队列。原图保留在你的设备上。', en: 'Select multiple files, or drop and paste more images into the queue. Originals stay on your device.' },
     'upload.invalid': { zh: '请选择 PNG、JPEG 或 WebP 图片。', en: 'Please choose PNG, JPEG, or WebP images.' },
     'upload.skipped': { zh: '已忽略 ${n} 个不支持的文件。', en: 'Skipped ${n} unsupported file(s).' },
     'upload.busy': { zh: '正在转换，请完成后再切换图片。', en: 'Conversion is running. Please wait before changing images.' },
@@ -38,7 +41,7 @@ const STRINGS = {
     // Upload
     'upload.text.html':     { zh: '拖拽一张或多张图片到此处<br>或 <strong>点击选择</strong>',          en: 'Drag one or more images here<br>or <strong>click to select</strong>' },
     'upload.hint':          { zh: 'PNG · JPEG · WebP',                                                en: 'PNG · JPEG · WebP' },
-    'upload.changeFile':    { zh: '换一张',                                                            en: 'Change' },
+    'upload.changeFile':    { zh: '重新选择',                                                          en: 'Replace selection' },
     'upload.batchCount':    { zh: '共 ${n} 张',                                                        en: '${n} images' },
 
     // File meta

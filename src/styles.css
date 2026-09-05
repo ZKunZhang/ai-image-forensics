@@ -1122,8 +1122,6 @@ a:hover { color: var(--text-muted); }
 .pane-right { min-height: 540px; padding: 30px; border-radius: 20px; box-shadow: var(--shadow-md); }
 .empty-state { gap: 16px; padding: 0; justify-content: flex-start; }
 .empty-state > .eyebrow { margin-bottom: 6px; color: var(--text-muted); }
-.empty-symbol { width: 64px; height: 64px; display: grid; place-items: center; color: var(--accent); background: var(--accent-soft); border-radius: 18px; margin-top: 14px; }
-.empty-symbol svg { width: 38px; height: 38px; }
 .empty-state .hero-title { font-size: clamp(22px, 2.4vw, 28px); line-height: 1.4; font-weight: 600; }
 .empty-state .hero-sub { font-size: 13px; max-width: 460px; }
 .empty-checks { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 4px; width: 100%; }
@@ -1146,6 +1144,10 @@ a:hover { color: var(--text-muted); }
 .preview-change { opacity: 1; min-height: 36px; }
 .preview-frame img { max-height: 360px; }
 .batch-item { min-height: 40px; }
+.batch-row { display: flex; align-items: center; gap: 4px; }
+.batch-row .batch-item { flex: 1; }
+.batch-remove { display: inline-flex; align-items: center; justify-content: center; flex: 0 0 36px; min-height: 40px; border: 0; border-radius: 8px; background: transparent; color: var(--text-muted); cursor: pointer; }
+.batch-remove:hover:not(:disabled) { background: var(--danger-bg); color: var(--danger); }
 .batch-item.active { border-color: var(--accent); background: var(--accent-soft); }
 .batch-item .batch-name, .batch-item.active .batch-name { display: block; width: auto; height: auto; flex: 1; min-width: 0; background: none; color: inherit; font-size: inherit; overflow: hidden; text-overflow: ellipsis; border-radius: 0; }
 .camera-option.selected { border-color: var(--accent); background: var(--accent-soft); box-shadow: inset 0 0 0 1px var(--accent); }

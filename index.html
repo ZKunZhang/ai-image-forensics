@@ -182,7 +182,7 @@
                 <section class="preview-block hidden" id="previewBlock">
                     <div class="preview-frame">
                         <img id="previewImg" alt="预览" data-i18n-attr="alt:upload.preview">
-                        <button class="preview-change" id="btnChangeFile" type="button" aria-label="换一张">
+                        <button class="preview-change" id="btnChangeFile" type="button" aria-label="重新选择" data-i18n-attr="aria-label:upload.changeFile">
                             <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3.54-7.13"/><polyline points="21 4 21 12 13 12"/></svg>
                             <span data-i18n="upload.changeFile">换一张</span>
                         </button>
@@ -199,6 +199,10 @@
                             <span class="fm-value mono" id="fileHash">—</span>
                         </div>
                     </div>
+                    <button class="btn-secondary btn-full" id="btnAddFiles" type="button">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+                        <span data-i18n="upload.addFiles">继续添加图片</span>
+                    </button>
                     <div class="batch-queue hidden" id="batchQueue" aria-label="图片队列" data-i18n-attr="aria-label:upload.queue"></div>
                 </section>
                 <p id="uploadFeedback" class="upload-feedback hidden" role="status" aria-live="polite"></p>
@@ -208,7 +212,6 @@
             <section class="pane pane-right" id="paneRight">
                 <div class="empty-state" id="emptyState">
                     <span class="eyebrow" data-i18n="empty.eyebrow">02 / 查看线索</span>
-                    <div class="empty-symbol" aria-hidden="true"><svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="10" y="6" width="28" height="36" rx="5"/><path d="M17 15h14M17 21h9M17 33h5"/><circle cx="30" cy="30" r="6"/><path d="m34 34 5 5"/></svg></div>
                     <h2 class="hero-title" data-i18n="empty.title">每张图片，都有线索可循</h2>
                     <p class="hero-sub" data-i18n="empty.sub">选择图片后自动分析来源标记，再按需探索频域特征、元数据与转换工具。</p>
                     <div class="empty-checks">
