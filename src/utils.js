@@ -67,7 +67,10 @@ export function getImageDims(file) {
             resolve(`${img.naturalWidth} x ${img.naturalHeight}px`);
             URL.revokeObjectURL(img.src);
         };
-        img.onerror = () => resolve('—');
+        img.onerror = () => {
+            URL.revokeObjectURL(img.src);
+            resolve('—');
+        };
         img.src = URL.createObjectURL(file);
     });
 }

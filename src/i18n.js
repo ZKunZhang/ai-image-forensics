@@ -3,6 +3,25 @@
 // at render time. Static text uses data-i18n[-attr] in HTML.
 
 const STRINGS = {
+    'intro.kicker': { zh: '图片溯源工作台', en: 'IMAGE PROVENANCE WORKSPACE' },
+    'intro.privacy': { zh: '本地处理 · 图片不上传', en: 'On-device · No image uploads' },
+    'empty.eyebrow': { zh: '02 / 查看线索', en: '02 / EXPLORE THE EVIDENCE' },
+    'empty.title': { zh: '每张图片，都有线索可循', en: 'Every image has a story' },
+    'empty.sub': { zh: '选择图片后自动分析来源标记，再按需探索频域特征、元数据与转换工具。', en: 'Select an image to check its provenance, then explore frequency features, metadata, and conversion tools.' },
+    'upload.heading': { zh: '01 / 选择图片', en: '01 / SELECT IMAGES' },
+    'upload.choose': { zh: '选择图片', en: 'Choose images' },
+    'upload.clear': { zh: '清空', en: 'Clear' },
+    'upload.paste': { zh: '也可直接粘贴剪贴板中的图片', en: 'Or paste an image from your clipboard' },
+    'upload.help': { zh: '支持多图批量处理。原图始终保留在你的设备上。', en: 'Batch processing supported. Your original files stay on your device.' },
+    'upload.invalid': { zh: '请选择 PNG、JPEG 或 WebP 图片。', en: 'Please choose PNG, JPEG, or WebP images.' },
+    'upload.skipped': { zh: '已忽略 ${n} 个不支持的文件。', en: 'Skipped ${n} unsupported file(s).' },
+    'upload.busy': { zh: '正在转换，请完成后再切换图片。', en: 'Conversion is running. Please wait before changing images.' },
+    'upload.preview': { zh: '所选图片预览', en: 'Selected image preview' },
+    'upload.queue': { zh: '图片队列', en: 'Image queue' },
+    'tab.label': { zh: '分析工具', en: 'Analysis tools' },
+    'result.caveat': { zh: '未发现标记不代表图片未经 AI 生成，分析结果应结合其他证据判断。', en: 'Missing markers do not rule out AI generation. Consider these findings alongside other evidence.' },
+    'result.failed': { zh: '分析未完成', en: 'Analysis could not finish' },
+    'result.retry': { zh: '请重新选择有效图片后重试。', en: 'Choose a valid image and try again.' },
     // Hero / empty-state
     'hero.title':           { zh: '追溯一张图的来路',                                                  en: 'Trace where an image comes from' },
     'hero.sub':             { zh: '检测 C2PA 凭证、AI 生成签名、频域水印痕迹。',                       en: 'Detect C2PA credentials, AI-generated signatures, and frequency-domain watermark traces.' },

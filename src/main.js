@@ -24,6 +24,13 @@ let analysisToken = 0;
 let previewUrl = null;
 let currentMeta = null, currentJumbf = null;
 let lastFreqBytes = null, lastFreqResult = null;
+let converting = false;
+let downloadUrls = [];
+
+function releaseDownloads() {
+    downloadUrls.forEach(url => URL.revokeObjectURL(url));
+    downloadUrls = [];
+}
 
 // ================= Camera selector (grouped) =================
 const sel = document.getElementById('cameraSelector');
@@ -31,11 +38,11 @@ function renderCameraSelector() {
     const groupHtml = CAMERA_GROUPS.map(g => {
         const cams = Object.entries(CAMERA_PROFILES).filter(([, c]) => c.group === g.id);
         const cells = cams.map(([key, cam]) => `
-            <div class="camera-option ${key === selectedProfile ? 'selected' : ''}" data-key="${key}">
-                <div class="icon">${cam.icon}</div>
-                <div class="name">${escHtml(cam.displayName)}</div>
-                <div class="model">${escHtml(cam.Make)}</div>
-            </div>`).join('');
+            <button type="button" class="camera-option ${key === selectedProfile ? 'selected' : ''}" data-key="${key}" aria-pressed="${key === selectedProfile}">
+                <span class="icon" aria-hidden="true">${cam.icon}</span>
+                <span class="name">${escHtml(cam.displayName)}</span>
+                <span class="model">${escHtml(cam.Make)}</span>
+            </button>`).join('');
         return `<div class="camera-group">
             <div class="camera-group-title">${g.icon} ${escHtml(t('conv.group.' + g.id))} <span class="camera-group-count">${cams.length}</span></div>
             <div class="camera-grid">${cells}</div>
@@ -47,8 +54,12 @@ renderCameraSelector();
 sel.addEventListener('click', (e) => {
     const opt = e.target.closest('.camera-option');
     if (!opt) return;
-    sel.querySelectorAll('.camera-option').forEach(n => n.classList.remove('selected'));
+    sel.querySelectorAll('.camera-option').forEach(n => {
+        n.classList.remove('selected');
+        n.setAttribute('aria-pressed', 'false');
+    });
     opt.classList.add('selected');
+    opt.setAttribute('aria-pressed', 'true');
     selectedProfile = opt.dataset.key;
 });
 
@@ -56,8 +67,10 @@ sel.addEventListener('click', (e) => {
 const gpsSel = document.getElementById('advGps');
 function renderGpsOptions() {
     if (!gpsSel) return;
+    const selected = gpsSel.value;
     gpsSel.innerHTML = Object.keys(GPS_PRESETS).map(k =>
         `<option value="${k}">${escHtml(t('gps.' + k))}</option>`).join('');
+    if (selected) gpsSel.value = selected;
 }
 renderGpsOptions();
 const dateSel = document.getElementById('advDatePreset');
@@ -108,6 +121,17 @@ function resolveQuality() {
 // ================= Upload handling =================
 const uploadArea = document.getElementById('uploadArea');
 const fileInput = document.getElementById('fileInput');
+const uploadFeedback = document.getElementById('uploadFeedback');
+function showUploadFeedback(message = '') {
+    uploadFeedback.textContent = message;
+    uploadFeedback.classList.toggle('hidden', !message);
+}
+uploadArea.addEventListener('keydown', e => {
+    if (e.target === uploadArea && (e.key === 'Enter' || e.key === ' ')) {
+        e.preventDefault();
+        fileInput.click();
+    }
+});
 uploadArea.addEventListener('click', (e) => {
     if (e.target.closest('input, button, a')) return;
     fileInput.click();
@@ -122,6 +146,22 @@ uploadArea.addEventListener('drop', e => {
 fileInput.addEventListener('change', () => {
     if (fileInput.files.length) handleFiles(fileInput.files);
     fileInput.value = '';
+});
+document.addEventListener('paste', e => {
+    if (e.target.closest?.('input, textarea, [contenteditable="true"]')) return;
+    if (e.clipboardData?.files.length) {
+        e.preventDefault();
+        handleFiles(e.clipboardData.files);
+    }
+});
+// Prevent a dropped file from navigating away, including after the uploader is hidden.
+document.addEventListener('dragover', e => {
+    if (Array.from(e.dataTransfer.types).includes('Files')) e.preventDefault();
+});
+document.addEventListener('drop', e => {
+    if (!e.dataTransfer.files.length || uploadArea.contains(e.target)) return;
+    e.preventDefault();
+    handleFiles(e.dataTransfer.files);
 });
 
 document.getElementById('btnChangeFile')?.addEventListener('click', (e) => {
@@ -183,6 +223,7 @@ const wmControls = document.getElementById('wmControls');
 function syncWmControlsVisibility() {
     if (!wmControls) return;
     wmControls.style.display = wmMainToggle?.checked ? '' : 'none';
+    wmControls.setAttribute('aria-hidden', String(!wmMainToggle?.checked));
 }
 wmMainToggle?.addEventListener('change', syncWmControlsVisibility);
 syncWmControlsVisibility();
@@ -193,12 +234,12 @@ function resolveTechniques() {
 }
 
 // ================= Progressive analysis log =================
-// Pins every step to ≥ minMs so the user sees the work happen. Prevents the
-// "instant flash" problem where a 20MB image seems to analyze in 0ms.
+// Guard each asynchronous step so an older selection cannot update the current view.
 
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
-async function runStep(log, text, fn, minMs = 260, tone = 'done') {
+async function analysisStep(token, log, text, fn, minMs = 0, tone = 'done') {
+    if (token !== analysisToken) throw new DOMException('Superseded', 'AbortError');
     const line = document.createElement('div');
     line.className = 'log-line pending';
     line.innerHTML = `<span class="log-mark"></span><span class="log-text">${escHtml(text)}<span class="trail"></span></span>`;
@@ -207,7 +248,9 @@ async function runStep(log, text, fn, minMs = 260, tone = 'done') {
     const t0 = performance.now();
     const result = await fn();
     const elapsed = performance.now() - t0;
-    if (elapsed < minMs) await sleep(minMs - elapsed);
+    const pause = Math.min(minMs, 40);
+    if (elapsed < pause) await sleep(pause - elapsed);
+    if (token !== analysisToken) throw new DOMException('Superseded', 'AbortError');
     line.classList.remove('pending');
     line.classList.add('done');
     if (tone !== 'done') line.classList.add(tone);
@@ -227,6 +270,28 @@ const resultView = document.getElementById('resultView');
 const previewBlock = document.getElementById('previewBlock');
 const analysisLog = document.getElementById('analysisLog');
 const batchQueue = document.getElementById('batchQueue');
+const btnClear = document.getElementById('btnClear');
+btnClear.addEventListener('click', () => {
+    if (converting) return;
+    ++analysisToken;
+    currentFile = currentBytes = currentMeta = currentJumbf = null;
+    lastFreqBytes = lastFreqResult = null;
+    fileQueue = [];
+    activeFileIndex = 0;
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
+    previewUrl = null;
+    document.getElementById('previewImg').removeAttribute('src');
+    releaseDownloads();
+    renderFileQueue();
+    previewBlock.classList.add('hidden');
+    resultView.classList.add('hidden');
+    resultView.setAttribute('aria-busy', 'false');
+    emptyState.classList.remove('hidden');
+    uploadArea.classList.remove('hidden');
+    btnClear.classList.add('hidden');
+    showUploadFeedback();
+    uploadArea.focus();
+});
 
 function isSupportedImage(file) {
     return ['image/png', 'image/jpeg', 'image/webp'].includes(file.type);
@@ -250,13 +315,14 @@ function renderFileQueue() {
     batchQueue.innerHTML = `
         <div class="batch-queue-head">${escHtml(t('upload.batchCount', { n: fileQueue.length }))}</div>
         <div class="batch-queue-items">
-            ${fileQueue.map((file, index) => `<button type="button" class="batch-item ${index === activeFileIndex ? 'active' : ''}" data-file-index="${index}" title="${escAttr(file.name)}"><span>${index + 1}</span>${escHtml(file.name)}</button>`).join('')}
+            ${fileQueue.map((file, index) => `<button type="button" class="batch-item ${index === activeFileIndex ? 'active' : ''}" data-file-index="${index}" aria-current="${index === activeFileIndex}" ${converting ? 'disabled' : ''} title="${escAttr(file.name)}"><span>${index + 1}</span><span class="batch-name">${escHtml(file.name)}</span></button>`).join('')}
         </div>`;
 }
 
 batchQueue.addEventListener('click', (event) => {
     const item = event.target.closest('.batch-item');
     if (!item) return;
+    if (converting) return;
     const index = Number(item.dataset.fileIndex);
     if (!Number.isInteger(index) || index === activeFileIndex || !fileQueue[index]) return;
     activeFileIndex = index;
@@ -265,8 +331,10 @@ batchQueue.addEventListener('click', (event) => {
 });
 
 function handleFiles(files) {
+    if (converting) return showUploadFeedback(t('upload.busy'));
     const accepted = Array.from(files).filter(isSupportedImage);
-    if (!accepted.length) return;
+    if (!accepted.length) return showUploadFeedback(t('upload.invalid'));
+    showUploadFeedback(accepted.length < files.length ? t('upload.skipped', { n: files.length - accepted.length }) : '');
     fileQueue = accepted;
     activeFileIndex = 0;
     renderFileQueue();
@@ -275,6 +343,8 @@ function handleFiles(files) {
 
 async function handleFile(file) {
     const token = ++analysisToken;
+    const runStep = (...args) => analysisStep(token, ...args);
+    releaseDownloads();
     currentFile = file;
     currentBytes = null;
     currentMeta = null;
@@ -284,10 +354,11 @@ async function handleFile(file) {
     // Reset UI to reveal result view
     emptyState.classList.add('hidden');
     resultView.classList.remove('hidden');
+    resultView.setAttribute('aria-busy', 'true');
+    btnClear.classList.remove('hidden');
     previewBlock.classList.remove('hidden');
     uploadArea.classList.add('hidden');   // ← hide the big uploader; "换一张" button on the preview handles re-upload
-    document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === 'detect'));
-    document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('hidden', p.dataset.panel !== 'detect'));
+    activateTab('detect');
 
     // Reset freq panel to pristine
     const freqPanel = document.getElementById('freqPanel');
@@ -296,12 +367,13 @@ async function handleFile(file) {
             <span class="freq-disclaimer-tag">${escHtml(t('freq.disclaimer.tag'))}</span>
             <span>${escHtml(t('freq.disclaimer.text'))}</span>
         </div>
-        <button class="btn-primary" id="btnRunFreq">
+        <button class="btn-primary" id="btnRunFreq" disabled>
             <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
             ${escHtml(t('freq.runBtn'))}
         </button>
         <p class="panel-hint">${t('freq.panelHint.html')}</p>`;
     document.getElementById('metadataPanel').innerHTML = '';
+    document.getElementById('metadataPanel')._pending = false;
     document.getElementById('detectionItems').innerHTML = '';
     document.getElementById('convertResult').style.display = 'none';
     document.getElementById('btnConvert').disabled = true;
@@ -333,7 +405,6 @@ async function handleFile(file) {
         const uint8 = new Uint8Array(buffer);
         if (token !== analysisToken) return;
         currentBytes = uint8;
-        document.getElementById('btnConvert').disabled = false;
 
         const hashHex = await runStep(analysisLog, t('log.sha256'), async () => {
             const h = await sha256(buffer);
@@ -347,7 +418,10 @@ async function handleFile(file) {
             : file.type === 'image/webp' ? 'WebP' : (file.type || '—');
         document.getElementById('fileType').textContent = fileType;
 
-        getImageDims(file).then(d => { document.getElementById('fileDims').textContent = d; });
+        const dims = await getImageDims(file);
+        if (token !== analysisToken) return;
+        if (dims === '—') throw new Error(t('result.retry'));
+        document.getElementById('fileDims').textContent = dims;
 
         await runStep(analysisLog, t('log.jumbf'), async () => {
             currentJumbf = sniffJumbf(uint8);
@@ -358,8 +432,10 @@ async function handleFile(file) {
         }, 320, currentJumbf?.present ? 'hit' : 'done');
 
         await runStep(analysisLog, t('log.exif'), async () => {
-            currentMeta = await parseMetadata(uint8);
-            const keys = Object.keys(currentMeta).filter(k => !k.startsWith('_'));
+            const meta = await parseMetadata(uint8);
+            if (token !== analysisToken) return;
+            currentMeta = meta;
+            const keys = Object.keys(meta).filter(k => !k.startsWith('_'));
             return { detail: keys.length ? t('log.fieldsCount', { n: keys.length }) : t('log.noMeta') };
         }, 420);
 
@@ -370,7 +446,7 @@ async function handleFile(file) {
             return { value: res, detail: hits ? t('log.hits', { n: hits }) : t('log.allNeg') };
         }, 360, 'done');
 
-        await runStep(analysisLog, t('log.wmHeuristic'), () => sleep(200), 320);
+        await runStep(analysisLog, t('log.wmHeuristic'), () => {}, 40);
         if (token !== analysisToken) return;
 
         // Render results. Only strong/medium confidence counts as HIT.
@@ -391,7 +467,7 @@ async function handleFile(file) {
         hb.className = 'pill ' + (anyHit ? 'badge-hit' : 'badge-clean');
 
         // Fade log out, reveal detection items
-        await sleep(350);
+        if (token !== analysisToken) return;
         analysisLog.classList.add('hidden');
 
         const container = document.getElementById('detectionItems');
@@ -416,20 +492,32 @@ async function handleFile(file) {
 
         // Render metadata tab lazily on first activation (see tab handler below)
         document.getElementById('metadataPanel')._pending = true;
+        if (document.querySelector('[data-tab="meta"]').classList.contains('active')) activateTab('meta');
+        document.getElementById('btnConvert').disabled = false;
+        document.getElementById('btnRunFreq').disabled = false;
     } catch (err) {
+        if (token !== analysisToken) return;
+        currentBytes = null;
+        document.getElementById('headerTitle').textContent = t('result.failed');
+        document.getElementById('headerSubtitle').textContent = t('result.retry');
         const errLine = document.createElement('div');
         errLine.className = 'log-line done hit';
         errLine.innerHTML = `<span class="log-mark">✕</span><span class="log-text">${escHtml(t('log.err', { msg: err.message }))}</span>`;
         analysisLog.appendChild(errLine);
+    } finally {
+        if (token === analysisToken) resultView.setAttribute('aria-busy', 'false');
     }
 }
 
 // ================= Tab switching =================
-document.addEventListener('click', (ev) => {
-    const btn = ev.target.closest && ev.target.closest('.tab-btn');
-    if (!btn) return;
-    const target = btn.dataset.tab;
-    document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b === btn));
+function activateTab(target, focus = false) {
+    document.querySelectorAll('.tab-btn').forEach(b => {
+        const active = b.dataset.tab === target;
+        b.classList.toggle('active', active);
+        b.setAttribute('aria-selected', String(active));
+        b.tabIndex = active ? 0 : -1;
+        if (active && focus) b.focus();
+    });
     document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('hidden', p.dataset.panel !== target));
 
     if (target === 'meta') {
@@ -442,13 +530,39 @@ document.addEventListener('click', (ev) => {
             panel._pending = false;
         }
     }
+}
+document.querySelectorAll('.tab-btn').forEach(btn => {
+    const key = btn.dataset.tab;
+    btn.id = `tab-${key}`;
+    btn.setAttribute('role', 'tab');
+    btn.setAttribute('aria-controls', `panel-${key}`);
+    const panel = document.querySelector(`[data-panel="${key}"]`);
+    panel.id = `panel-${key}`;
+    panel.setAttribute('role', 'tabpanel');
+    panel.setAttribute('aria-labelledby', btn.id);
+    panel.tabIndex = 0;
+    btn.addEventListener('click', () => activateTab(key));
+    btn.addEventListener('keydown', e => {
+        const tabs = Array.from(document.querySelectorAll('.tab-btn'));
+        let index = tabs.indexOf(btn);
+        if (e.key === 'ArrowRight') index = (index + 1) % tabs.length;
+        else if (e.key === 'ArrowLeft') index = (index - 1 + tabs.length) % tabs.length;
+        else if (e.key === 'Home') index = 0;
+        else if (e.key === 'End') index = tabs.length - 1;
+        else return;
+        e.preventDefault();
+        activateTab(tabs[index].dataset.tab, true);
+    });
 });
+activateTab('detect');
 
 // ================= Frequency trigger =================
 document.addEventListener('click', async (ev) => {
     const btn = ev.target.closest && ev.target.closest('#btnRunFreq');
     if (!btn) return;
     if (!currentFile || !currentBytes) return;
+    const token = analysisToken;
+    const bytes = currentBytes;
     const panel = document.getElementById('freqPanel');
     if (lastFreqBytes === currentBytes && lastFreqResult) {
         renderFrequencyPanel(panel, lastFreqResult);
@@ -457,25 +571,34 @@ document.addEventListener('click', async (ev) => {
     btn.disabled = true;
     panel.innerHTML = `
         <div class="loading"><div class="spinner"></div><br>
-        <span id="freqStage">初始化...</span></div>`;
+        <span id="freqStage">${escHtml(t('result.analyzing'))}</span></div>`;
     try {
         const result = await analyzeFrequency(currentBytes, currentFile.type || 'image/jpeg', {
             onProgress: ({ stage, pct, info }) => {
+                if (token !== analysisToken) return;
                 const el = document.getElementById('freqStage');
                 if (el) el.textContent = `[${pct}%] ${stage}${info ? ' · ' + info : ''}`;
             },
         });
-        lastFreqBytes = currentBytes;
+        if (token !== analysisToken) return;
+        lastFreqBytes = bytes;
         lastFreqResult = result;
         renderFrequencyPanel(panel, result);
     } catch (err) {
+        if (token !== analysisToken) return;
         panel.innerHTML = `<div style="color:var(--danger);font-weight:600;padding:16px">${escHtml(t('freq.err', { msg: err.message }))}</div>`;
     }
 });
 
 // ================= Convert =================
 document.getElementById('btnConvert').addEventListener('click', async () => {
-    if (!currentFile || !currentBytes) return;
+    if (!currentFile || !currentBytes || converting) return;
+    converting = true;
+    releaseDownloads();
+    langToggle.disabled = true;
+    btnClear.disabled = true;
+    document.getElementById('btnChangeFile').disabled = true;
+    batchQueue.querySelectorAll('button').forEach(b => { b.disabled = true; });
     const btn = document.getElementById('btnConvert');
     const resultDiv = document.getElementById('convertResult');
     resultDiv.style.display = 'block';
@@ -497,7 +620,7 @@ document.getElementById('btnConvert').addEventListener('click', async () => {
         <div class="convert-task-list">
             ${files.map((file, index) => `<div class="convert-task" data-task-index="${index}"><span class="convert-task-mark">${index + 1}</span><span class="convert-task-name">${escHtml(file.name)}</span><em>${escHtml(t('conv.status.pending'))}</em></div>`).join('')}
         </div>`;
-    resultDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    resultDiv.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth', block: 'nearest' });
     btn.disabled = true;
 
     try {
@@ -506,6 +629,7 @@ document.getElementById('btnConvert').addEventListener('click', async () => {
         const intensity = parseInt(document.getElementById('wmIntensity')?.value || '3', 10);
         const techniques = resolveTechniques();
         const advanced = resolveAdvanced();
+        const quality = resolveQuality();
         const outputs = [];
         const failures = [];
         for (let index = 0; index < files.length; index++) {
@@ -524,7 +648,7 @@ document.getElementById('btnConvert').addEventListener('click', async () => {
                     : new Uint8Array(await file.arrayBuffer());
                 let wmReport = null;
                 const { blob, log } = await convertImage(bytes, file.type, profile, {
-                    quality: resolveQuality(), advanced,
+                    quality, advanced,
                     disruptWatermark: disrupt ? async (canvas) => {
                         wmReport = await disruptWatermark(canvas, { intensity, techniques });
                     } : null,
@@ -536,6 +660,7 @@ document.getElementById('btnConvert').addEventListener('click', async () => {
                     url: URL.createObjectURL(blob),
                     outName: `${origName}_${profile.Make}_${Date.now().toString(36)}_${index + 1}.jpg`,
                 });
+                downloadUrls.push(outputs.at(-1).url);
                 task?.classList.remove('running');
                 task?.classList.add('done');
                 if (task) task.querySelector('em').textContent = t('conv.status.done');
@@ -583,6 +708,11 @@ document.getElementById('btnConvert').addEventListener('click', async () => {
         resultDiv.className = 'convert-result error';
         resultDiv.innerHTML = `<div style="color:var(--danger);font-weight:600">${escHtml(t('conv.err', { msg: err.message }))}</div>`;
     } finally {
+        converting = false;
+        langToggle.disabled = false;
+        btnClear.disabled = false;
+        document.getElementById('btnChangeFile').disabled = false;
+        batchQueue.querySelectorAll('button').forEach(b => { b.disabled = false; });
         btn.disabled = false;
         if (btnLabel) btnLabel.textContent = idleBtnText;
     }
